@@ -1,0 +1,42 @@
+---
+title: "CeliacToxicAdditives"
+format: html
+editor: visual
+---
+
+### Load Libraries
+
+```{r}
+library(tidyverse)
+library(here)
+```
+
+```{r}
+food_additives <- read_csv(here("data/food_additives_updated.csv"))
+```
+
+```{r}
+ingredients <- read_csv(here("data/ingredients.csv"))
+```
+
+```{r}
+library(dplyr)
+library(stringr)
+
+# Create a list of additives from food_additives$Additive
+additive_list <- food_additives$Additive
+
+# Mutate a new column in ingredients that checks for matches with additives
+ingredients <- ingredients %>%
+  mutate(additives_found = sapply(features.value, function(x) {
+    # Search for additives in the features.value column (ignore case and spaces)
+    matches <- additive_list[str_detect(tolower(x), tolower(str_replace_all(additive_list, "\\s+", "")))]
+    
+    # Return matches separated by a comma, or "none" if no match is found
+    if (length(matches) > 0) {
+      paste(matches, collapse = ", ")
+    } else {
+      "none"
+    }
+  }))
+```
