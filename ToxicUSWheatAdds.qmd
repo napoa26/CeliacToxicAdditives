@@ -12,7 +12,7 @@ library(here)
 ```
 
 ```{r}
-food_additives <- read_csv(here("data/food_additives_updated.csv"))
+food_additives <- read_csv(here("data/food_additives_info.csv"))
 ```
 
 ```{r}
