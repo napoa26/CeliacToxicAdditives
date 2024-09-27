@@ -40,3 +40,26 @@ ingredients <- ingredients %>%
     }
   }))
 ```
+
+### Prompt Practice
+
+#### Create "gi_distressor" paramter
+
+```{r}
+gi_distressor <- c("Digestive distress", "Toxicity to organs", "Gut inflammation",
+                   "Bloating, gas", "Laxative effect", "Digestive issues", 
+                   "Potential gut disruption", "Digestive discomfort", 
+                   "Bloating, diarrhea")
+```
+
+#### Mutate "gi_distressort" with "ingrediemts" for analysis
+
+```{r}
+food_additives <- food_additives %>%
+  mutate(GI_Distress = if_else(str_detect(`Human Health Problems`, paste(gi_distressor, collapse = "|")), "Yes", "No"))
+```
+
+```{r}
+food_additives_gi <- food_additives %>% 
+  filter(GI_Distress == ("Yes"))
+```
