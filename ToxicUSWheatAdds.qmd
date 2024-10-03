@@ -4,24 +4,42 @@ format: html
 editor: visual
 ---
 
-### Load Libraries
+## Load Libraries
 
-```{r}
+```{r, message=FALSE}
 library(tidyverse)
 library(here)
+library(writexl)
+library(dplyr)
+library(stringr)
 ```
 
-```{r}
+## Read-in Project Data
+
+### Food Additives Dataset
+
+```{r, message=FALSE}
 food_additives <- read_csv(here("data/food_additives_info.csv"))
+
 ```
 
-```{r}
+### Master Dataset
+
+#### Dataset Listing 10,000 Food Items Sold on Amazon.com (kaggle.com)
+
+-   [Master Dataset](https://docs.google.com/spreadsheets/d/1E11-DthZptlmkfux2-1Ob0Pg54fPPXr7sxVnuaUsAso/edit?gid=1324914440#gid=1324914440)
+
+-   10,000 Observations across 19 variables
+
+```{r, message=FALSE}
 ingredients <- read_csv(here("data/ingredients.csv"))
 ```
 
-```{r}
-library(dplyr)
-library(stringr)
+## Exploratory Analysis
+
+```{r, message=FALSE}
+#library(dplyr)
+#library(stringr)
 
 # Create a list of additives from food_additives$Additive
 additive_list <- food_additives$Additive
@@ -41,25 +59,102 @@ ingredients <- ingredients %>%
   }))
 ```
 
-### Prompt Practice
+## Establish the Gastrointestinal (GI) Distressor Parameter:
 
-#### Create "gi_distressor" paramter
+### According to The National Institutes of Health
 
-```{r}
+-   [Understanding Gastrointestinal Distress: A Framework for Clinical Practice](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4275100/)
+
+```{r, message=FALSE}
 gi_distressor <- c("Digestive distress", "Toxicity to organs", "Gut inflammation",
                    "Bloating, gas", "Laxative effect", "Digestive issues", 
                    "Potential gut disruption", "Digestive discomfort", 
                    "Bloating, diarrhea")
 ```
 
-#### Mutate "gi_distressort" with "ingrediemts" for analysis
+## Isolate Established GI Distressors in Master Dataset
 
-```{r}
+### Mutate "gi_distressor" with "ingredients" for analysis
+
+```{r, message=FALSE}
 food_additives <- food_additives %>%
   mutate(GI_Distress = if_else(str_detect(`Human Health Problems`, paste(gi_distressor, collapse = "|")), "Yes", "No"))
 ```
 
-```{r}
+```{r, message=FALSE}
 food_additives_gi <- food_additives %>% 
   filter(GI_Distress == ("Yes"))
+```
+
+### Add GI Distressor Column
+
+```{r, message=FALSE}
+# Create a list of additives from food_additives$Additive
+additive_distressor_yes <- food_additives_gi$Additive
+
+# Mutate a new column in ingredients that checks for matches with additives
+ingredients <- ingredients %>%
+  mutate(gi_distrssors_found = sapply(features.value, function(x) {
+    # Search for additives in the features.value column (ignore case and spaces)
+    matches <- additive_distressor_yes[str_detect(tolower(x), tolower(str_replace_all(additive_distressor_yes, "\\s+", "")))]
+    
+    # Return matches separated by a comma, or "none" if no match is found
+    if (length(matches) > 0) {
+      paste(matches, collapse = ", ")
+    } else {
+      "none"
+    }
+  }))
+```
+
+```{r, message=FALSE}
+gi_distressor_ingredients <- ingredients %>% 
+  filter(gi_distrssors_found != "none")
+```
+
+```{r, message=FALSE}
+foods_with_added_gi_distressors <- gi_distressor_ingredients$name
+```
+
+### Additives Banned in the EU
+
+```{r, message=FALSE}
+eu_banned_additives <- list("Azodicarbonamide", "Auramine O (AO)", 
+  "Brominated Vegetable Oil (BVO)", "Olestra", "Potassium Bromate", "Propylparaben", 
+  "Red No. 40", "Rhodamine B", "Sudan Dyes", "Titanium Dioxide (TiO2)", "Yellow No.5",  
+  "Yellow No.6")
+
+```
+
+### Isolate Foods Banned in EU Within Master Dataset
+
+-   [Foods Banned in the EU](https://docs.google.com/spreadsheets/d/1ex2MCmHIID9Rxm3IDNz2n51fcokwICTyGjIDQ_AhX60/edit?gid=1359861023#gid=1359861023)
+
+```{r, message=FALSE}
+# Mutate a new column in ingredients that checks for matches with additives
+ingredients <- ingredients %>%
+  mutate(eu_banned_additives = sapply(features.value, function(x) {
+    # Search for additives in the features.value column (ignore case and spaces)
+    matches <- eu_banned_additives[str_detect(tolower(x), tolower(str_replace_all(eu_banned_additives, "\\s+", "")))]
+    
+    # Return matches separated by a comma, or "none" if no match is found
+    if (length(matches) > 0) {
+      paste(matches, collapse = ", ")
+    } else {
+      "none"
+    }
+  }))
+```
+
+```{r, message=FALSE}
+eu_banned_foods <- ingredients %>% 
+  filter(eu_banned_additives != "none")
+```
+
+### Use "writexl" to Save Dataframes Locally, as Excel Files
+
+```{r}
+food_additives.xlxs <- write_xlsx(food_additives, "/Users/anapoleon/Documents/CeliacToxicAdditives/data/food_additives")
+
+food_additives_gi <- write_xlsx(food_additives_gi, "/Users/anapoleon/Documents/CeliacToxicAdditives/data/food_additives")
 ```
