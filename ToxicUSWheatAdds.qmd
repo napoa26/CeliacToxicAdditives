@@ -19,7 +19,7 @@ library(stringr)
 ### Food Additives Dataset
 
 ```{r, message=FALSE}
-food_additives <- read_csv(here("data/food_additives_info.csv"))
+food_additives <- read_csv(here("data/food_additives_updated.csv"))
 
 ```
 
@@ -94,7 +94,7 @@ additive_distressor_yes <- food_additives_gi$Additive
 
 # Mutate a new column in ingredients that checks for matches with additives
 ingredients <- ingredients %>%
-  mutate(gi_distrssors_found = sapply(features.value, function(x) {
+  mutate(gi_distressors_found = sapply(features.value, function(x) {
     # Search for additives in the features.value column (ignore case and spaces)
     matches <- additive_distressor_yes[str_detect(tolower(x), tolower(str_replace_all(additive_distressor_yes, "\\s+", "")))]
     
@@ -109,7 +109,9 @@ ingredients <- ingredients %>%
 
 ```{r, message=FALSE}
 gi_distressor_ingredients <- ingredients %>% 
-  filter(gi_distrssors_found != "none")
+  filter(gi_distressors_found != "none") %>% 
+  filter(!str_detect(gi_distressors_found, "NA"))
+
 ```
 
 ```{r, message=FALSE}
